@@ -39,6 +39,7 @@ public class LibInfo
     return new Class[]{
       EpilogZing.class,
       EpilogHelix.class,
+      Grbl.class,
       LaosCutter.class,
       Lasersaur.class,
       Dummy.class,
