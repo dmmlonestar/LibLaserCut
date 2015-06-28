@@ -457,15 +457,18 @@ public class Grbl extends LaserCutter {
     }
     if (cpi == null)
     {
+      pl.taskChanged(this, "COM-Port not found");
       throw new Exception("Error: No such COM-Port '"+this.getComPort()+"'");
     }
     CommPort tmp = cpi.open("VisiCut", 10000);
     if (tmp == null)
     {
+      pl.taskChanged(this, "Couldn't open COM-Port");
       throw new Exception("Error: Could not Open COM-Port '"+this.getComPort()+"'");
     }
     if (!(tmp instanceof SerialPort))
     {
+      pl.taskChanged(this, "Not a serial port");
       throw new Exception("Port '"+this.getComPort()+"' is not a serial port.");
     }
     SerialPort port = (SerialPort) tmp;
@@ -487,7 +490,7 @@ public class Grbl extends LaserCutter {
     {
       byte[] gcode_stream = null;
       int offset = 0;
-      int stride = UART_BYTE_CHUNK_SIZE;
+      int stride = UART_BYTE_CHUNK_SIZE / 2;
 
       if (p instanceof Raster3dPart)
       {
@@ -521,6 +524,7 @@ public class Grbl extends LaserCutter {
             outStrings.close();
             out.close();
             port.close();
+            pl.taskChanged(this, "CTS timeout");
             throw new Exception("Error: COM port ClearToSend never signaled!");
         }
 
@@ -531,11 +535,15 @@ public class Grbl extends LaserCutter {
         out.write(gcode_stream, offset, stride);
         offset += stride;
 
-        //FIXME: should check port input for error
-      }
-      i++;
-      pl.progressChanged(this, 20 + (int) (i*(double) 60/max));
+        //FIXME: should check port input for error ; for now keep it empty
+        if (in.available() > 0)
+            in.read();
+       }
+       // Progress reflects subjobs
+       i++;
+       pl.progressChanged(this, 20 + (int) (i*(double) 60/max));
     }
+    pl.taskChanged(this, "finishing");
     // convert the ';' to newline and insert + append a newline
     outStrings.print("\n" + this.jobPostGCode.replaceAll(";", "\n") + "\n");
     outStrings.close();
